@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Grammar Master - Full Edition</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        #quiz-container { background: white; padding: 40px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); width: 100%; max-width: 750px; text-align: center; }
+        h1 { color: #1a1a1a; margin-bottom: 20px; font-size: 2.2em; }
+        .info-box { background: #e7f3ff; border-left: 6px solid #007bff; padding: 20px; margin-bottom: 25px; font-size: 1.1em; border-radius: 0 15px 15px 0; text-align: left; line-height: 1.6; }
+        .setup-section { background: #f8f9fa; padding: 25px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #ddd; text-align: left; }
+        .checkbox-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 15px 0; }
+        #question { font-size: 1.7em; font-weight: 700; padding: 35px; background: #f8f9fa; border-left: 10px solid #007bff; border-radius: 15px; margin-bottom: 30px; color: #222; text-align: left; line-height: 1.4; }
+        .option-btn { background: #fff; border: 3px solid #007bff; color: #007bff; padding: 20px 30px; margin: 10px 0; width: 100%; border-radius: 50px; cursor: pointer; font-weight: 700; font-size: 1.4em; transition: all 0.2s; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+        .option-btn:hover:not(:disabled) { background: #007bff; color: white; transform: scale(1.02); }
+        .option-btn:disabled { opacity: 0.6; }
+        #tense-badge { display: inline-block; background: #6c757d; color: white; padding: 8px 20px; border-radius: 20px; font-size: 1em; margin-bottom: 15px; font-weight: bold; text-transform: uppercase; }
+        .start-btn { background: #28a745; color: white; border: none; padding: 22px; width: 100%; border-radius: 50px; cursor: pointer; font-size: 1.5em; font-weight: bold; }
+        #quiz-content, #result-screen { display: none; }
+        #explanation-box { margin-top: 20px; background: #fff4e5; padding: 20px; border-radius: 12px; display: none; border: 1px solid #ffeeba; text-align: left; font-size: 1.1em; }
+        .stat-item { background: #f1f3f5; padding: 15px; border-radius: 12px; margin: 10px 0; text-align: left; }
+        .stat-bar { height: 14px; background: #ddd; border-radius: 7px; margin-top: 10px; overflow: hidden; }
+        .stat-fill { height: 100%; background: #28a745; width: 0%; transition: width 1s; }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div id="setup-menu">
+        <h1>Grammar Coach 🇬🇧</h1>
+        <div class="info-box">
+            <strong>Beispiele vor dem Start:</strong><br>
+            • <b>Simple Present:</b> He <u>works</u> every day.<br>
+            • <b>Present Progressive:</b> He <u>is working</u> now.<br>
+            • <b>Simple Past:</b> He <u>worked</u> yesterday.<br>
+            • <b>Present Perfect:</b> He <u>has worked</u> here for years.<br>
+            • <b>Past Perfect:</b> He <u>had worked</u> there before he quit.
+        </div>
+        <div class="setup-section">
+            <strong>1. Zeitformen wählen:</strong>
+            <div class="checkbox-group" id="tense-options"></div>
+            <strong>2. Fragen insgesamt (z.B. 10 oder 20):</strong>
+            <input type="number" id="question-count" value="10" min="5" max="100" style="width: 70px; padding: 8px; font-size: 1.1em; margin-left: 10px;">
+        </div>
+        <button class="start-btn" onclick="startQuiz()">Test starten ➔</button>
+    </div>
+
+    <div id="quiz-content">
+        <div id="progress-text" style="text-align:right; color:#888; font-weight: bold;"></div>
+        <div id="tense-badge">Tense</div>
+        <div id="question"></div>
+        <div id="options-container"></div>
+        <div id="feedback" style="margin-top:20px; font-weight:bold; font-size: 1.4em;"></div>
+        <div id="explanation-box">
+            <span id="correct-answer-display" style="color:#28a745; font-weight:bold; display:block; margin-bottom:10px;"></span>
+            <div id="explanation-text"></div>
+        </div>
+        <button id="next-btn" onclick="nextQuestion()" style="display:none; margin-top:25px; padding:20px; border-radius:50px; background:#007bff; color:white; border:none; cursor:pointer; width:100%; font-weight:bold; font-size: 1.2em;">Weiter ➔</button>
+    </div>
+
+    <div id="result-screen">
+        <h1>Ergebnis 📊</h1>
+        <div id="stats-container"></div>
+        <div id="recommendation-box" style="margin:25px 0; font-weight: bold; font-size: 1.2em; color: #0056b3;"></div>
+        <button class="start-btn" onclick="location.reload()">Neustart</button>
+    </div>
+</div>
+
+<script>
+    const quizData = [
+        // PRESENT SIMPLE (20)
+        { t: "Simple Present", s: "He ___ (to drink) tea every morning.", o: ["drink", "drinks", "is drinking"], c: "drinks", e: "Gewohnheit." },
+        { t: "Simple Present", s: "Water ___ (to boil) at 100 degrees.", o: ["boil", "boils", "is boiling"], c: "boils", e: "Fakt." },
+        { t: "Simple Present", s: "They ___ (to live) in London.", o: ["live", "lives", "are living"], c: "live", e: "Zustand." },
+        { t: "Simple Present", s: "The train ___ (to leave) at 8 PM.", o: ["leave", "leaves", "is leaving"], c: "leaves", e: "Zeitplan." },
+        { t: "Simple Present", s: "I ___ (to play) tennis on Mondays.", o: ["play", "plays", "am playing"], c: "play", e: "Routine." },
+        { t: "Simple Present", s: "She ___ (to speak) English fluently.", o: ["speak", "speaks", "is speaking"], c: "speaks", e: "Fähigkeit." },
+        { t: "Simple Present", s: "Does he ___ (to like) pizza?", o: ["like", "likes", "liking"], c: "like", e: "Frageform." },
+        { t: "Simple Present", s: "Birds ___ (to fly) south in winter.", o: ["fly", "flies", "are flying"], c: "fly", e: "Naturgesetz." },
+        { t: "Simple Present", s: "The sun ___ (to rise) in the east.", o: ["rise", "rises", "is rising"], c: "rises", e: "Fakt." },
+        { t: "Simple Present", s: "It ___ (not/to rain) much here.", o: ["doesn't rain", "don't rain", "isn't raining"], c: "doesn't rain", e: "Verneinung." },
+        { t: "Simple Present", s: "We ___ (to drink) coffee every day.", o: ["drink", "drinks", "drinking"], c: "drink", e: "Gewohnheit." },
+        { t: "Simple Present", s: "My mom ___ (to cook) dinner at 6.", o: ["cook", "cooks", "cooking"], c: "cooks", e: "Routine." },
+        { t: "Simple Present", s: "Plants ___ (to need) sunlight.", o: ["need", "needs", "needing"], c: "need", e: "Fakt." },
+        { t: "Simple Present", s: "The shop ___ (to close) late.", o: ["close", "closes", "closing"], c: "closes", e: "Zeitplan." },
+        { t: "Simple Present", s: "Do they ___ (to know) you?", o: ["know", "knows", "knowing"], c: "know", e: "Frageform." },
+        { t: "Simple Present", s: "I ___ (to love) chocolate.", o: ["love", "loves", "loving"], c: "love", e: "Gefühl/Zustand." },
+        { t: "Simple Present", s: "He ___ (to wash) his car weekly.", o: ["wash", "washes", "washing"], c: "washes", e: "Routine." },
+        { t: "Simple Present", s: "Every year we ___ (to go) to Italy.", o: ["go", "goes", "going"], c: "go", e: "Wiederholung." },
+        { t: "Simple Present", s: "The Earth ___ (to spin) fast.", o: ["spin", "spins", "spinning"], c: "spins", e: "Fakt." },
+        { t: "Simple Present", s: "She ___ (to work) in a bank.", o: ["work", "works", "working"], c: "works", e: "Beruf." },
+
+        // SIMPLE PAST (20)
+        { t: "Simple Past", s: "I ___ (to buy) a car last week.", o: ["buy", "bought", "have bought"], c: "bought", e: "Signal: last week." },
+        { t: "Simple Past", s: "We ___ (to watch) a movie yesterday.", o: ["watch", "watched", "have watched"], c: "watched", e: "Signal: yesterday." },
+        { t: "Simple Past", s: "She ___ (to go) home an hour ago.", o: ["goes", "went", "has gone"], c: "went", e: "Signal: ago." },
+        { t: "Simple Past", s: "They ___ (to build) this in 1990.", o: ["build", "built", "builded"], c: "built", e: "Zeitpunkt." },
+        { t: "Simple Past", s: "I ___ (to see) him at the station.", o: ["see", "saw", "seen"], c: "saw", e: "Ereignis." },
+        { t: "Simple Past", s: "He ___ (to break) his leg in 2015.", o: ["break", "broke", "broken"], c: "broke", e: "Abgeschlossen." },
+        { t: "Simple Past", s: "Did you ___ (to enjoy) it?", o: ["enjoy", "enjoyed", "enjoys"], c: "enjoy", e: "Infinitiv nach Did." },
+        { t: "Simple Past", s: "It ___ (to be) cold yesterday.", o: ["is", "was", "were"], c: "was", e: "Zustand." },
+        { t: "Simple Past", s: "Shakespeare ___ (to write) Hamlet.", o: ["write", "wrote", "written"], c: "wrote", e: "Historisch." },
+        { t: "Simple Past", s: "We ___ (to meet) in 2005.", o: ["meet", "met", "meeting"], c: "met", e: "Jahreszahl." },
+        { t: "Simple Past", s: "The cat ___ (to catch) a mouse.", o: ["catch", "caught", "catched"], c: "caught", e: "Ereignis." },
+        { t: "Simple Past", s: "I ___ (to wake up) late today.", o: ["wake", "woke", "woken"], c: "woke", e: "Abgeschlossen." },
+        { t: "Simple Past", s: "They ___ (to lose) the game.", o: ["lose", "lost", "losed"], c: "lost", e: "Abgeschlossen." },
+        { t: "Simple Past", s: "She ___ (to tell) me a story.", o: ["tell", "told", "tells"], c: "told", e: "Ereignis." },
+        { t: "Simple Past", s: "I ___ (to forget) my keys.", o: ["forget", "forgot", "forgotten"], c: "forgot", e: "Ereignis." },
+        { t: "Simple Past", s: "We ___ (to eat) pizza last night.", o: ["eat", "ate", "eaten"], c: "ate", e: "Signal: last night." },
+        { t: "Simple Past", s: "He ___ (to leave) at 5 PM.", o: ["leave", "left", "leaves"], c: "left", e: "Zeitpunkt." },
+        { t: "Simple Past", s: "Who ___ (to discover) America?", o: ["discover", "discovered", "discovering"], c: "discovered", e: "Historisch." },
+        { t: "Simple Past", s: "It ___ (to snow) last winter.", o: ["snow", "snowed", "snows"], c: "snowed", e: "Signal: last winter." },
+        { t: "Simple Past", s: "She ___ (to sell) her old bike.", o: ["sell", "sold", "selling"], c: "sold", e: "Abgeschlossen." },
+
+        // PRESENT PERFECT (20)
+        { t: "Present Perfect", s: "I ___ (to lose) my keys!", o: ["lost", "have lost", "loses"], c: "have lost", e: "Resultat jetzt." },
+        { t: "Present Perfect", s: "We ___ (to be) to London twice.", o: ["were", "have been", "are"], c: "have been", e: "Erfahrung." },
+        { t: "Present Perfect", s: "She ___ (to live) here for years.", o: ["lives", "has lived", "lived"], c: "has lived", e: "Signal: for." },
+        { t: "Present Perfect", s: "I ___ (to finish) already.", o: ["finished", "have finished", "finish"], c: "have finished", e: "Signal: already." },
+        { t: "Present Perfect", s: "___ you ever ___ sushi?", o: ["Did/eat", "Have/eaten", "Has/eaten"], c: "Have/eaten", e: "Signal: ever." },
+        { t: "Present Perfect", s: "He ___ (not/to call) yet.", o: ["didn't call", "hasn't called", "not call"], c: "hasn't called", e: "Signal: yet." },
+        { t: "Present Perfect", s: "I ___ (to know) him since school.", o: ["know", "have known", "knew"], c: "have known", e: "Signal: since." },
+        { t: "Present Perfect", s: "The movie ___ (just/to start).", o: ["just started", "has just started", "starts"], c: "has just started", e: "Signal: just." },
+        { t: "Present Perfect", s: "They ___ (to buy) a new car.", o: ["bought", "have bought", "buy"], c: "have bought", e: "Neuigkeit." },
+        { t: "Present Perfect", s: "I ___ (never/to see) that movie.", o: ["never saw", "have never seen", "never see"], c: "have never seen", e: "Signal: never." },
+        { t: "Present Perfect", s: "We ___ (not/to see) him today.", o: ["didn't see", "haven't seen", "not see"], c: "haven't seen", e: "Zeitraum offen." },
+        { t: "Present Perfect", s: "___ you ___ (to see) my glasses?", o: ["Did/see", "Have/seen", "Do/see"], c: "Have/seen", e: "Resultat jetzt." },
+        { t: "Present Perfect", s: "It ___ (to stop) raining.", o: ["stopped", "has stopped", "stops"], c: "has stopped", e: "Resultat jetzt." },
+        { t: "Present Perfect", s: "She ___ (to be) sick all week.", o: ["was", "has been", "is"], c: "has been", e: "Zeitraum bis jetzt." },
+        { t: "Present Perfect", s: "I ___ (to write) three emails so far.", o: ["wrote", "have written", "write"], c: "have written", e: "Signal: so far." },
+        { t: "Present Perfect", s: "They ___ (to go) to Paris.", o: ["went", "have gone", "go"], c: "have gone", e: "Sie sind jetzt dort." },
+        { t: "Present Perfect", s: "He ___ (to forget) his password.", o: ["forgot", "has forgotten", "forget"], c: "has forgotten", e: "Resultat jetzt." },
+        { t: "Present Perfect", s: "We ___ (to work) hard today.", o: ["worked", "have worked", "work"], c: "have worked", e: "Zeitraum heute." },
+        { t: "Present Perfect", s: "I ___ (to hear) the news.", o: ["heard", "have heard", "hear"], c: "have heard", e: "Neuigkeit." },
+        { t: "Present Perfect", s: "She ___ (not/to start) yet.", o: ["didn't start", "hasn't started", "not start"], c: "hasn't started", e: "Signal: yet." },
+
+        // PAST PERFECT (20)
+        { t: "Past Perfect", s: "He ___ (to eat) before he left.", o: ["ate", "had eaten", "has eaten"], c: "had eaten", e: "Vorzeitigkeit." },
+        { t: "Past Perfect", s: "The train ___ (to go) when I came.", o: ["went", "had gone", "has gone"], c: "had gone", e: "Vorzeitigkeit." },
+        { t: "Past Perfect", s: "She failed because she ___ (not/to study).", o: ["didn't study", "hadn't studied", "not study"], c: "hadn't studied", e: "Grund davor." },
+        { t: "Past Perfect", s: "After we ___ (to finish), we left.", o: ["finished", "had finished", "have finished"], c: "had finished", e: "Signal: After." },
+        { t: "Past Perfect", s: "I realized I ___ (to forget) it.", o: ["forgot", "had forgotten", "have forgotten"], c: "had forgotten", e: "Vorzeitigkeit." },
+        { t: "Past Perfect", s: "By then, the movie ___ (to start).", o: ["started", "had started", "starts"], c: "had started", e: "Vorzeitigkeit." },
+        { t: "Past Perfect", s: "When I arrived, he ___ (to leave).", o: ["left", "had left", "was leaving"], c: "had left", e: "Vorzeitigkeit." },
+        { t: "Past Perfect", s: "She told me she ___ (to win).", o: ["won", "had won", "wins"], c: "had won", e: "Sieg davor." },
+        { t: "Past Perfect", s: "If I ___ (to know), I'd have come.", o: ["knew", "had known", "know"], c: "had known", e: "If-Satz III." },
+        { t: "Past Perfect", s: "The music ___ (to stop) already.", o: ["stopped", "had stopped", "stops"], c: "had stopped", e: "Vorzeitigkeit." },
+        { t: "Past Perfect", s: "I ___ (never/to see) a bird like that.", o: ["never saw", "had never seen", "never see"], c: "had never seen", e: "Erfahrung davor." },
+        { t: "Past Perfect", s: "By 2020, I ___ (to move) twice.", o: ["moved", "had moved", "moving"], c: "had moved", e: "Vorzeitiger Zeitpunkt." },
+        { t: "Past Perfect", s: "They ___ (to finish) by 8 PM.", o: ["finished", "had finished", "finish"], c: "had finished", e: "Zeitpunkt davor." },
+        { t: "Past Perfect", s: "I ___ (to buy) tickets already.", o: ["bought", "had bought", "buy"], c: "had bought", e: "Vorzeitigkeit." },
+        { t: "Past Perfect", s: "The rain ___ (to stop) when we went out.", o: ["stopped", "had stopped", "stops"], c: "Vorzeitigkeit." },
+        { t: "Past Perfect", s: "He ___ (to live) there for years before moving.", o: ["lived", "had lived", "lives"], c: "had lived", e: "Dauer davor." },
+        { t: "Past Perfect", s: "I ___ (not/to see) him for ages.", o: ["didn't see", "hadn't seen", "haven't seen"], c: "hadn't seen", e: "Zeitraum davor." },
+        { t: "Past Perfect", s: "The thief ___ (to escape) already.", o: ["escaped", "had escaped", "escapes"], c: "had escaped", e: "Vorzeitigkeit." },
+        { t: "Past Perfect", s: "She ___ (to lose) hope until he called.", o: ["lost", "had lost", "loses"], c: "had lost", e: "Zustand davor." },
+        { t: "Past Perfect", s: "We ___ (to work) hard all day.", o: ["worked", "had worked", "has worked"], c: "had worked", e: "Dauer davor." },
+
+        // PRESENT PROGRESSIVE (20)
+        { t: "Present Progressive", s: "Look! They ___ (to dance).", o: ["dance", "are dancing", "danced"], c: "are dancing", e: "Signal: Look!" },
+        { t: "Present Progressive", s: "I ___ (to talk) right now.", o: ["talk", "am talking", "talking"], c: "am talking", e: "Signal: right now." },
+        { t: "Present Progressive", s: "It ___ (to rain) at the moment.", o: ["rains", "is raining", "rained"], c: "is raining", e: "Signal: at the moment." },
+        { t: "Present Progressive", s: "Listen! Someone ___ (to knock).", o: ["knocks", "is knocking", "knocked"], c: "is knocking", e: "Signal: Listen!" },
+        { t: "Present Progressive", s: "She ___ (to wear) a red dress today.", o: ["wears", "is wearing", "wear"], c: "is wearing", e: "Heute." },
+        { t: "Present Progressive", s: "They ___ (to study) for exams now.", o: ["study", "are studying", "studies"], c: "are studying", e: "Phase jetzt." },
+        { t: "Present Progressive", s: "Why ___ you ___ (to laugh)?", o: ["do/laugh", "are/laughing", "is/laughing"], c: "are/laughing", e: "Jetzt." },
+        { t: "Present Progressive", s: "We ___ (not/to watch) TV now.", o: ["don't watch", "are not watching", "not watch"], c: "are not watching", e: "Jetzt." },
+        { t: "Present Progressive", s: "The baby ___ (to sleep) right now.", o: ["sleeps", "is sleeping", "slept"], c: "is sleeping", e: "Jetzt." },
+        { t: "Present Progressive", s: "I ___ (to look) for my keys.", o: ["look", "am looking", "looking"], c: "am looking", e: "Jetzt." },
+        { t: "Present Progressive", s: "The sun ___ (to shine) now.", o: ["shines", "is shining", "shone"], c: "is shining", e: "Jetzt." },
+        { t: "Present Progressive", s: "He ___ (to take) the bus today.", o: ["takes", "is taking", "took"], c: "is taking", e: "Ausnahme heute." },
+        { t: "Present Progressive", s: "We ___ (to move) this week.", o: ["move", "are moving", "moving"], c: "are moving", e: "Temporär." },
+        { t: "Present Progressive", s: "What ___ you ___ (to cook)?", o: ["do/cook", "are/cooking", "is/cooking"], c: "are/cooking", e: "Jetzt." },
+        { t: "Present Progressive", s: "The dog ___ (to bark) at someone.", o: ["barks", "is barking", "barked"], c: "is barking", e: "Jetzt." },
+        { t: "Present Progressive", s: "I ___ (to read) a good book.", o: ["read", "am reading", "reads"], c: "am reading", e: "Aktuelle Phase." },
+        { t: "Present Progressive", s: "Are you ___ (to listen)?", o: ["listen", "listening", "listens"], c: "listening", e: "Frage jetzt." },
+        { t: "Present Progressive", s: "It ___ (to get) dark.", o: ["gets", "is getting", "got"], c: "is getting", e: "Prozess jetzt." },
+        { t: "Present Progressive", s: "She ___ (to wait) for you.", o: ["waits", "is waiting", "waiting"], c: "is waiting", e: "Jetzt." },
+        { t: "Present Progressive", s: "They ___ (to have) lunch.", o: ["have", "are having", "has"], c: "are having", e: "Jetzt." }
+    ];
+
+    let sessionQuestions = [];
+    let currentIndex = 0;
+    let analytics = {};
+
+    window.onload = () => {
+        const menu = document.getElementById('tense-options');
+        const tenses = [...new Set(quizData.map(item => item.t))];
+        tenses.sort().forEach(tense => {
+            menu.innerHTML += `<label style="display:block; margin: 10px 0; font-size: 1.1em; cursor:pointer;"><input type="checkbox" name="tense" value="${tense}" checked style="transform: scale(1.3); margin-right: 12px;"> ${tense}</label>`;
+        });
+    };
+
+    function startQuiz() {
+        const checkboxes = document.querySelectorAll('input[name="tense"]:checked');
+        const selectedTenses = Array.from(checkboxes).map(cb => cb.value);
+        let targetCount = parseInt(document.getElementById('question-count').value) || 10;
+
+        if (selectedTenses.length === 0) { alert("Wähle mindestens eine Zeitform!"); return; }
+
+        let finalPool = [];
+        let tempPool = JSON.parse(JSON.stringify(quizData));
+
+        // GARANTIE: 2 Fragen pro gewählter Zeitform
+        selectedTenses.forEach(tense => {
+            let questionsOfTense = tempPool.filter(q => q.t === tense);
+            questionsOfTense.sort(() => Math.random() - 0.5);
+            for(let i = 0; i < 2; i++) {
+                if(questionsOfTense.length > 0) {
+                    let picked = questionsOfTense.pop();
+                    finalPool.push(picked);
+                    tempPool = tempPool.filter(q => q.s !== picked.s);
+                }
+            }
+        });
+
+        // AUFFÜLLEN: Bis targetCount erreicht ist
+        let remainingOptions = tempPool.filter(q => selectedTenses.includes(q.t));
+        remainingOptions.sort(() => Math.random() - 0.5);
+
+        while(finalPool.length < targetCount && remainingOptions.length > 0) {
+            finalPool.push(remainingOptions.pop());
+        }
+
+        sessionQuestions = finalPool.sort(() => Math.random() - 0.5);
+        analytics = {};
+        selectedTenses.forEach(t => analytics[t] = { correct: 0, total: 0 });
+
+        document.getElementById('setup-menu').style.display = "none";
+        document.getElementById('quiz-content').style.display = "block";
+        currentIndex = 0;
+        showQuestion();
+    }
+
+    function showQuestion() {
+        let q = sessionQuestions[currentIndex];
+        document.getElementById('progress-text').innerText = `Frage ${currentIndex + 1} von ${sessionQuestions.length}`;
+        document.getElementById('tense-badge').innerText = q.t;
+        document.getElementById('question').innerText = q.s;
+        document.getElementById('feedback').innerText = "";
+        document.getElementById('explanation-box').style.display = "none";
+        document.getElementById('next-btn').style.display = "none";
+
+        const container = document.getElementById('options-container');
+        container.innerHTML = "";
+        q.o.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.innerText = opt;
+            btn.className = 'option-btn';
+            btn.onclick = () => checkAnswer(opt, q);
+            container.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(choice, q) {
+        const btns = document.querySelectorAll('.option-btn');
+        btns.forEach(b => b.disabled = true);
+        
+        if (!analytics[q.t]) analytics[q.t] = { correct: 0, total: 0 };
+        analytics[q.t].total++;
+        
+        const fb = document.getElementById('feedback');
+        if (choice === q.c) {
+            analytics[q.t].correct++;
+            fb.innerHTML = "RICHTIG! 🌟";
+            fb.style.color = "#28a745";
+            document.getElementById('correct-answer-display').style.display = "none";
+        } else {
+            fb.innerHTML = "FALSCH! ❌";
+            fb.style.color = "#dc3545";
+            document.getElementById('correct-answer-display').innerHTML = `Lösung: <b>${q.c}</b>`;
+            document.getElementById('correct-answer-display').style.display = "block";
+        }
+
+        document.getElementById('explanation-text').innerHTML = `Regel: ${q.e}`;
+        document.getElementById('explanation-box').style.display = "block";
+        document.getElementById('next-btn').style.display = "block";
+    }
+
+    function nextQuestion() {
+        currentIndex++;
+        if (currentIndex < sessionQuestions.length) showQuestion();
+        else showResults();
+    }
+
+    function showResults() {
+        document.getElementById('quiz-content').style.display = "none";
+        document.getElementById('result-screen').style.display = "block";
+        
+        const container = document.getElementById('stats-container');
+        container.innerHTML = "";
+        let worstTense = { name: "N/A", ratio: 1.1 };
+
+        for (let t in analytics) {
+            if (analytics[t].total === 0) continue;
+            let ratio = analytics[t].correct / analytics[t].total;
+            if (ratio < worstTense.ratio) worstTense = { name: t, ratio: ratio };
+            let percent = Math.round(ratio * 100);
+
+            container.innerHTML += `
+                <div class="stat-item">
+                    <strong>${t}</strong>: ${analytics[t].correct}/${analytics[t].total} richtig (${percent}%)
+                    <div class="stat-bar"><div class="stat-fill" style="width:${percent}%"></div></div>
+                </div>
+            `;
+        }
+        document.getElementById('recommendation-box').innerText = worstTense.ratio < 0.7 ? 
+            `Fokus-Tipp: Schau dir "${worstTense.name}" nochmal an!` : "Sehr gute Leistung!";
+    }
+</script>
+</body>
+</html>
