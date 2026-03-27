@@ -323,33 +323,50 @@
     };
 
     function startQuiz() {
-        const selected = Array.from(document.querySelectorAll('input[name="tense"]:checked')).map(cb => cb.value);
-        let target = parseInt(document.getElementById('question-count').value) || 10;
+        // 1. Hole die aktuelle Zahl aus dem Input-Feld GENAU JETZT
+        const questionInput = document.getElementById('question-count');
+        let target = parseInt(questionInput.value);
         
-        if (selected.length === 0) { alert("Bitte mindestens eine Zeitform wählen!"); return; }
+        // Sicherheits-Check: Falls Feld leer oder ungültig
+        if (isNaN(target) || target < 1) target = 10;
+
+        const selected = Array.from(document.querySelectorAll('input[name="tense"]:checked')).map(cb => cb.value);
+        
+        if (selected.length === 0) { 
+            alert("Bitte mindestens eine Zeitform wählen!"); 
+            return; 
+        }
 
         let finalPool = [];
         let tempPool = JSON.parse(JSON.stringify(quizData));
 
-        // GARANTIE: 2 Fragen pro gewählter Zeitform
+        // SCHRITT A: Garantie-Logik (2 pro Zeitform)
+        // Aber: Wenn der User nur 5 Fragen will, nehmen wir nur 1 pro Zeitform als Minimum,
+        // damit die Gesamtzahl nicht gesprengt wird.
+        let minPerTense = target < (selected.length * 2) ? 1 : 2;
+
         selected.forEach(tense => {
             let filtered = tempPool.filter(q => q.t === tense).sort(() => Math.random() - 0.5);
-            for(let i=0; i<2; i++) {
-                if(filtered.length > 0) {
+            for(let i=0; i < minPerTense; i++) {
+                if(filtered.length > 0 && finalPool.length < target) {
                     let picked = filtered.pop();
                     finalPool.push(picked);
+                    // Aus dem Hauptpool löschen
                     tempPool = tempPool.filter(q => q.s !== picked.s);
                 }
             }
         });
 
-        // AUFFÜLLEN bis Zielanzahl
+        // SCHRITT B: Den Rest auffüllen, bis das "target" exakt erreicht ist
         let remaining = tempPool.filter(q => selected.includes(q.t)).sort(() => Math.random() - 0.5);
+        
         while(finalPool.length < target && remaining.length > 0) {
             finalPool.push(remaining.pop());
         }
 
-        sessionQuestions = finalPool.sort(() => Math.random() - 0.5);
+        // 2. WICHTIG: Den Pool nochmal kürzen, falls er durch die Garantie zu groß wurde
+        sessionQuestions = finalPool.slice(0, target).sort(() => Math.random() - 0.5);
+        
         analytics = {};
         selected.forEach(t => analytics[t] = { correct: 0, total: 0 });
 
